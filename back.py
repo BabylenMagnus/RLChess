@@ -28,6 +28,6 @@ def encryption_board(chessboard):
     for name in chessboard:
         matrix[-1].append(int(name.islower()))
 
-    matrix = torch.tensor(matrix).view(1, 7, 8, 8)
+    matrix = torch.tensor(matrix).view(1, 7, 8, 8).float()
 
     return matrix
