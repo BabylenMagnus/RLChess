@@ -20,17 +20,7 @@ class Node:
         self.Value = 0  # цена ноды (выход из NN)
         self.Probability = probability  # вероятность хода на эту ноду (выход из NN)
 
-    def is_leaf(self, last):
-        """
-        Решает являеться ли Нода листом или нет
-        """
-        if last == self.children:
-            return True, 0
-        return self.children, self.children == {}
-
 
 class SkyNet(nn.Module):
     def __init__(self):
         super(SkyNet, self).__init__()
-
-    def forward(self, ):
