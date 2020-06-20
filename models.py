@@ -11,7 +11,7 @@ class Node:
     Они максимально похожи на Ноды из Alpha Go Zero.
     """
 
-    def __init__(self, parent, probability):
+    def __init__(self, parent=None, probability=None):
         self.parent = parent  # это родители Ноды
         self.children = {}
 
@@ -23,7 +23,7 @@ class Node:
         self.Probability = probability  # вероятность хода на эту ноду (выход из NN)
 
 
-class SkyNet(nn.Module):
+class SkyNetModel(nn.Module):
     """
     Это агент, который на взод получает доску, а отправляет
     тензор вероятностей хода и Value для позиции, где -1 - победа чёрных
@@ -32,7 +32,7 @@ class SkyNet(nn.Module):
     На одну доску нужно всего 4 мс.
     """
     def __init__(self):
-        super(SkyNet, self).__init__()
+        super(SkyNetModel, self).__init__()
 
         self.main = nn.Sequential(
             nn.Conv2d(7, 32, kernel_size=3, padding=1),

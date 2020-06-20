@@ -6,8 +6,6 @@ def encryption_board(chessboard):
     Кодирует доску в виде строки из модуля chess в
     Тензор из 7ми матриц torch. 7 потому-что для каждой
     фигуры по одной и белые/чёрные.
-    В модели не будет памяти, т.к. выбор хода будет всегда из
-    допустимых ходов и по этой причине не будет за кого играет модель.
     """
     chessboard = str(chessboard)
     chessboard = chessboard.replace('\n', '').replace(' ', '')
@@ -30,4 +28,32 @@ def encryption_board(chessboard):
 
     matrix = torch.tensor(matrix).view(1, 7, 8, 8).float()
 
-    return matrix
+    return chessboard, matrix
+
+
+def give_moves_prob(moves, probability, encrypt_board):
+    """
+    на вход получает все возможные ходы от list(chessboard.legal_moves)
+    и на каждый ход из тензора вероятностей находит шанс этого хода
+    """
+
+    boards = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']  # индексы в шахматах
+    chess_pieces = ['r', 'n', 'b', 'k', 'q', 'p']  # порядок матриц по
+    # фигурам из encryption_board
+
+    moves_prob = {}
+
+    for move in moves:
+        move = str(move)
+
+        piece = encrypt_board[boards.index(move[0]) +
+                              (int(move[1]) - 1) * 8].lower() # так узнаётся фигура,
+        # encrypt_board - это выход из encryption_board, а именно прсто строка всех
+        # фигур, берёться столбец из индексов шахматной доски и номер строки
+
+        moves_prob[move] = probability[0, chess_pieces.index(piece),
+                                       int(move[3]) - 1, boards.index(move[2])].item()
+        # когда элемент который будет ходить известен, в матрице этой фигуре
+        # ищетьс вероятность перехода на другое поле
+
+    return moves_prob
