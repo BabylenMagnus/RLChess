@@ -1,4 +1,5 @@
 from torch import nn
+import numpy as np
 
 
 # Q это все V цепочек Нод делённая на количество проходов через ноду
@@ -22,6 +23,18 @@ class Node:
         self.Value = 0  # цена ноды (выход из NN)
         self.Probability = probability  # вероятность хода на эту ноду (выход из NN)
 
+    def leaf_expansion(self, moves, quartile=0.8):
+        minimum = np.quantile(np.array(list(moves.values())), quartile)
+        moves = dict([(k, v) for k, v in moves.items() if v > minimum])
+
+        for move in moves:
+            if move not in self.children:
+                self.children[move] = Node(parent=self, probability=moves[move])
+
+    def show_children(self):
+        for child in self.children:
+            print('{:<3} - {:.3f}'.format(child, self.children[child].Probability))
+
 
 class SkyNetModel(nn.Module):
     """
@@ -31,6 +44,7 @@ class SkyNetModel(nn.Module):
     Сама архитекрута не сильно отличаеться от AlphaGo.
     На одну доску нужно всего 4 мс.
     """
+
     def __init__(self):
         super(SkyNetModel, self).__init__()
 
@@ -45,22 +59,7 @@ class SkyNetModel(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Dropout(0.1),
 
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
-            nn.Dropout(0.1),
-
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.2),
-            nn.Dropout(0.1),
-
-            nn.Conv2d(256, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
-            nn.Dropout(0.1),
-
-            nn.Conv2d(128, 64, kernel_size=3, padding=1),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2),
             nn.Dropout(0.1),
@@ -97,4 +96,3 @@ class SkyNetModel(nn.Module):
         probability = self.probability(out)
         value = self.value(out.view(-1, 448))
         return probability, value
-
