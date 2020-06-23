@@ -1,5 +1,6 @@
 import operator
 
+import chess
 from torch import nn
 import numpy as np
 from back import encryption_board, give_moves_prob
@@ -27,7 +28,9 @@ class Node:
         self.Probability = probability  # вероятность хода на эту ноду (выход из NN)
 
     def leaf_expansion(self, moves, quartile=0.8):
-
+        """
+        из допустимых ходов проверяються только 20% лучших
+        """
         minimum = np.quantile(np.array(list(moves.values())), quartile)
         moves = dict([(k, v) for k, v in moves.items() if v > minimum])
 
@@ -39,7 +42,11 @@ class Node:
         self.N += 1
 
     def upper_confidence_bounds(self, c=0.1):
-
+        """
+        Ход выбираеться не только из-за выхода из нейросети,
+        но и по количеству проходов через ноду. Чтобы большее количество
+        ходов использовать (которые имеют смысл).
+        """
         result = {}
 
         for move, node in self.children.items():
@@ -61,18 +68,29 @@ class MCTS:
         self.board = board
 
     def start_self_play(self):
+
+        current = self.root
+
         while True:
 
             moves = list(self.board.legal_moves)
             encrypt_board, inp = encryption_board(self.board)
             probability, value = self.agent(inp)
-            self.root.Value = value
+            current.Value = value
 
             moves_prob = give_moves_prob(moves, probability, encrypt_board)
 
-            self.root.leaf_expansion(moves_prob)
-            move = max(self.root.upper_confidence_bounds().items(),
+            current.leaf_expansion(moves_prob)
+            move = max(current.upper_confidence_bounds().items(),
                        key=operator.itemgetter(1))[0]
+            current = current.children[move]
+            move = chess.Move.from_uci(str(move))
+            self.board.push(move)
+
+            print(self.board)
+
+            if self.board.is_game_over():
+                break
 
 
 class SkyNetModel(nn.Module):

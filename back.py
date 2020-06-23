@@ -47,12 +47,12 @@ def give_moves_prob(moves, probability, encrypt_board):
         move = str(move)
 
         piece = encrypt_board[boards.index(move[0]) +
-                              (int(move[1]) - 1) * 8].lower() # так узнаётся фигура,
+                              (8 - int(move[1])) * 8].lower()  # так узнаётся фигура,
         # encrypt_board - это выход из encryption_board, а именно прсто строка всех
         # фигур, берёться столбец из индексов шахматной доски и номер строки
-
         moves_prob[move] = probability[0, chess_pieces.index(piece),
-                                       int(move[3]) - 1, boards.index(move[2])].item()
+                                   int(move[3]) - 1, boards.index(move[2])].item()
+
         # когда элемент который будет ходить известен, в матрице этой фигуре
         # ищетьс вероятность перехода на другое поле
 
