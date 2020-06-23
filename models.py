@@ -1,5 +1,8 @@
+import operator
+
 from torch import nn
 import numpy as np
+from back import encryption_board, give_moves_prob
 
 
 # Q это все V цепочек Нод делённая на количество проходов через ноду
@@ -18,22 +21,58 @@ class Node:
 
         # с большой буквы т.к. эти значения будут указываться в формулах
 
-        self.N = 0  # количество проходов через ноду
+        self.N = 1  # количество проходов через ноду
         self.Quality = 0  # вышу формула
         self.Value = 0  # цена ноды (выход из NN)
         self.Probability = probability  # вероятность хода на эту ноду (выход из NN)
 
     def leaf_expansion(self, moves, quartile=0.8):
+
         minimum = np.quantile(np.array(list(moves.values())), quartile)
         moves = dict([(k, v) for k, v in moves.items() if v > minimum])
 
         for move in moves:
+
             if move not in self.children:
                 self.children[move] = Node(parent=self, probability=moves[move])
+
+        self.N += 1
+
+    def upper_confidence_bounds(self, c=0.1):
+
+        result = {}
+
+        for move, node in self.children.items():
+            element = np.sqrt(np.log(self.N) / node.N)
+            result[move] = node.Probability + c * element
+
+        return result
 
     def show_children(self):
         for child in self.children:
             print('{:<3} - {:.3f}'.format(child, self.children[child].Probability))
+
+
+class MCTS:
+
+    def __init__(self, agent, board):
+        self.root = Node(probability=1)
+        self.agent = agent
+        self.board = board
+
+    def start_self_play(self):
+        while True:
+
+            moves = list(self.board.legal_moves)
+            encrypt_board, inp = encryption_board(self.board)
+            probability, value = self.agent(inp)
+            self.root.Value = value
+
+            moves_prob = give_moves_prob(moves, probability, encrypt_board)
+
+            self.root.leaf_expansion(moves_prob)
+            move = max(self.root.upper_confidence_bounds().items(),
+                       key=operator.itemgetter(1))[0]
 
 
 class SkyNetModel(nn.Module):
